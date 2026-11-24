@@ -17,9 +17,8 @@
   float: right;
 }
 
-/* ============================================================
-   1. THEME COLORS (light by default, dark when the system asks)
-   ============================================================ */
+/*
+   1. THEME COLORS (light by default, dark when the system asks) */
 :root {
   --bg: #ffffff;
   --surface: #ffffff;
@@ -63,9 +62,7 @@
 
 
 
-/* ============================================================
-   2. BASE AND LAYOUT
-   ============================================================ */
+/*    2. BASE AND LAYOUT */
 html { scroll-padding-top: env(safe-area-inset-top, 0px); }
 *, *::before, *::after { box-sizing: inherit; }
 
@@ -115,9 +112,7 @@ h3:first-child { margin-top: 0; }
 
 :focus-visible { outline: 2px solid var(--rent); outline-offset: 2px; }
 
-/* ============================================================
-   3. INPUT FORM
-   ============================================================ */
+/*    3. INPUT FORM */
 .field {
   display: grid;
   grid-template-columns: 1fr 112px;
@@ -142,9 +137,8 @@ h3:first-child { margin-top: 0; }
 .field.checkbox { grid-template-columns: auto 1fr; justify-content: start; }
 .field.select { grid-template-columns: 1fr; }
 
-/* ============================================================
-   4. RESULTS: VERDICT, KEY NUMBERS, CHART
-   ============================================================ */
+/*    4. RESULTS: VERDICT, KEY NUMBERS, CHART */
+  
 .verdict { font-size: clamp(22px, 3vw, 30px); line-height: 1.2; margin: 0 0 8px; }
 .verdict .buy-text { color: var(--buy); }
 .verdict .rent-text { color: var(--rent); }
@@ -176,9 +170,7 @@ h3:first-child { margin-top: 0; }
 
 #readout { min-height: 22px; font-size: 13px; color: var(--muted); }
 
-/* ============================================================
-   5. COST TABLES AND HEATMAP
-   ============================================================ */
+/*    5. COST TABLES AND HEATMAP */
 .two-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
