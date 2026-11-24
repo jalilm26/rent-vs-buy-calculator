@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rent vs. buy in Ontario</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<header>
+<button id= "toggleBtn">Switch to light mode!</button>
+</header>
+
+<style>
+
+.right_header {
+
+  float: right;
+}
+
+/* ============================================================
+   1. THEME COLORS (light by default, dark when the system asks)
+   ============================================================ */
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --ink: #17212b;
+  --muted: #5b6770;
+  --line: #d6dcdc;
+  --buy: #b9501a;
+  --rent: #1b6a73;
+  --warning: #9a3412;
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171b;
+    --surface: #1a2227;
+    --ink: #e8eef0;
+    --muted: #96a4ab;
+    --line: #2c373d;
+    --buy: #f08a4b;
+    --rent: #4fb7c0;
+    --warning: #fdba74;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171b;
+  --surface: #1a2227;
+  --ink: #e8eef0;
+  --muted: #96a4ab;
+  --line: #2c373d;
+  --buy: #f08a4b;
+  --rent: #4fb7c0;
+  --warning: #fdba74;
+}
+
+
+
+/* ============================================================
+   2. BASE AND LAYOUT
+   ============================================================ */
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.5 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 18px 48px;
+}
+
+h1, .verdict {
+  font-family: Fraunces, Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+h1 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 6px; line-height: 1.1; }
+h2 { font-size: 16px; margin: 0 0 10px; font-weight: 600; }
+h3 { font-size: 13px; margin: 16px 0 8px; font-weight: 600; color: var(--muted); }
+h3:first-child { margin-top: 0; }
+
+.intro { color: var(--muted); margin: 0 0 24px; max-width: 60ch; }
+
+/* Two columns: inputs on the left, results on the right */
+.layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+}
+.card + .card { margin-top: 16px; }
+
+:focus-visible { outline: 2px solid var(--rent); outline-offset: 2px; }
+
+/* ============================================================
+   3. INPUT FORM
+   ============================================================ */
+.field {
+  display: grid;
+  grid-template-columns: 1fr 112px;
+  gap: 4px 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.field label { font-size: 14px; }
+
+.field input[type=number],
+.field select {
+  width: 100%;
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.field input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--rent); }
+.field.checkbox { grid-template-columns: auto 1fr; justify-content: start; }
+.field.select { grid-template-columns: 1fr; }
+
+/* ============================================================
+   4. RESULTS: VERDICT, KEY NUMBERS, CHART
+   ============================================================ */
+.verdict { font-size: clamp(22px, 3vw, 30px); line-height: 1.2; margin: 0 0 8px; }
+.verdict .buy-text { color: var(--buy); }
+.verdict .rent-text { color: var(--rent); }
+
+.note { color: var(--muted); font-size: 13px; margin: 0; }
+.warning { color: var(--warning); font-size: 13px; margin: 8px 0 0; }
+
+.key-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.key-numbers div { border-left: 3px solid var(--line); padding-left: 10px; }
+.key-numbers .buy { border-color: var(--buy); }
+.key-numbers .rent { border-color: var(--rent); }
+.key-numbers span { display: block; font-size: 12px; color: var(--muted); }
+.key-numbers strong { font-size: 18px; font-weight: 600; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; margin-bottom: 6px; }
+.legend i { display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; }
+
+.chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart text { fill: var(--muted); font-size: 11px; }
+.chart .gridline { stroke: var(--line); stroke-width: 1; }
+.chart .line { fill: none; stroke-width: 2.5; }
+.chart .line.buy { stroke: var(--buy); }
+.chart .line.rent { stroke: var(--rent); }
+
+#readout { min-height: 22px; font-size: 13px; color: var(--muted); }
+
+/* ============================================================
+   5. COST TABLES AND HEATMAP
+   ============================================================ */
+.two-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td, th { padding: 5px 0; text-align: right; border-bottom: 1px solid var(--line); }
+td:first-child, th:first-child { text-align: left; }
+th { font-weight: 600; }
+
+.scroll-x { overflow-x: auto; }
+
+.heatmap {
+  display: grid;
+  grid-template-columns: 44px repeat(7, minmax(52px, 1fr));
+  gap: 2px;
+  min-width: 420px;
+  font-size: 12px;
+}
+.heatmap div { padding: 6px 2px; text-align: center; border-radius: 3px; }
+.heatmap .heading { color: var(--muted); }
+.heatmap .current { outline: 2px solid var(--ink); }
+
+.axis-note { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+
+.assumptions { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.assumptions li { margin-bottom: 4px; }
+</style>
+</head>
+
+<body>
+<main>
+  <center><h1>Rent or Buy Calculator (Are You Better Off Buying or Renting in The Long-run?)</h1></center>
+  <center><p class="intro">
+    This calculator compares your net worth if you buy a home against renting the same space and investing the difference.
+    It includes Ontario and Toronto land transfer tax, CMHC insurance and Canadian mortgage compounding.
+  </p></center>
+
+  <div class="layout">
+    <!-- Left column: filled in by buildInputs() -->
+    <section class="card" id="inputs" aria-label="Inputs"></section>
+
+    <!-- Right column: filled in by update() -->
+    <section>
+      <div class="card">
+        <p class="verdict" id="verdict"></p>
+        <p class="note" id="verdict-detail"></p>
+        <p class="warning" id="warnings" hidden></p>
+        <div class="key-numbers" id="key-numbers"></div>
+      </div>
+
+      <div class="card">
+        <h2>Net worth over time</h2>
+        <div class="legend">
+          <span><i style="background:var(--buy)"></i>Buy (home value − selling costs − mortgage)</span>
+          <span><i style="background:var(--rent)"></i>Rent and invest</span>
+        </div>
+        <svg class="chart" id="chart" viewBox="0 0 640 300" role="img"
+             aria-label="Net worth of buying versus renting over time"></svg>
+        <div id="readout">Hover or tap the chart to compare any year.</div>
+      </div>
+
+      <div class="card two-columns" id="costs"></div>
+
+      <div class="card">
+  <h2>Sensitivity: who wins?</h2>
+  <div class="scroll-x"><div class="heatmap" id="heatmap"></div></div>
+  <p class="axis-note">Rows: home price growth. Columns: investment return. Orange = buying ahead, teal = renting ahead. Values are buyer minus renter.</p>
+</div>
+<div class="card">
+
+
+        <h2>Method and assumptions</h2>
+        <ul class="assumptions">
+          <li>Both households spend the same total each month. Whoever has the lower housing cost invests the difference, and the renter starts by investing the down payment and closing costs.</li>
+          <li>Mortgage uses Canadian semi-annual compounding, a fixed rate for the whole horizon and no prepayments.</li>
+          <li>Land transfer tax uses the Ontario and Toronto bracket schedules for 1–2 single-family homes (about $4,000 and $4,475 first-time buyer rebates). Toronto’s extra tiers above $3 million are not modelled. Check current rates with the Province of Ontario and the City of Toronto.</li>
+          <li>CMHC premiums: 4.00% (5–9.99% down), 3.10% (10–14.99%), 2.80% (15–19.99%), added to the mortgage. Only applies to homes up to $1.5 million.</li>
+          <li>No capital gains tax on the home (principal residence). Renter’s investments are untaxed if sheltered in a TFSA or RRSP, otherwise 50% of gains is deducted at the end as a rough estimate.</li>
+          <li>Property tax and maintenance follow the home’s value. Condo fees, insurance and rent grow at the rent growth rate. Renter’s insurance is $30 a month. Legal and other closing costs are $1,800.</li>
+          <li>This is a planning tool, not financial advice. The result depends heavily on future price growth and investment returns, which nobody knows.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</main>
+
+
+<script>
+/* ==================================================================
+   1. CONSTANTS: edit these when tax rules or assumptions change
+   ================================================================== */
+
+// Land transfer tax brackets: [upper limit of bracket, rate]
+const LTT_BRACKETS = [
+  [55000, 0.005],
+  [250000, 0.01],
+  [400000, 0.015],
+  [2000000, 0.02],
+  [Infinity, 0.025],
+];
+const ONTARIO_FIRST_TIME_REBATE = 4000;
+const TORONTO_FIRST_TIME_REBATE = 4475;
+
+// CMHC premium by down payment: applies when down payment < 20% and price <= $1.5M
+const CMHC_PRICE_LIMIT = 1500000;
+const CMHC_RATES = [
+  { downUnderPct: 10, rate: 0.04 },
+  { downUnderPct: 15, rate: 0.031 },
+  { downUnderPct: 20, rate: 0.028 },
+];
+
+const LEGAL_AND_OTHER_CLOSING_COSTS = 1800;
+const RENTER_INSURANCE_PER_MONTH = 30;
+const TAX_ON_TAXABLE_GAINS = 0.25;      // rough rate if renter investments are not sheltered
+const STRESS_TEST_BUFFER_PCT = 2;       // qualifying rate = contract rate + 2%...
+const STRESS_TEST_MINIMUM_PCT = 5.25;   // ...or 5.25%, whichever is higher
+
+// Sensitivity heatmap axes
+const HEATMAP_GROWTH_RATES = [0, 1, 2, 3, 4, 5, 6];
+const HEATMAP_RETURN_RATES = [3, 4, 5, 6, 7, 8, 9];
+
+/* ==================================================================
+   2. INPUT DEFINITIONS
+   Each field: id, label, default value, step. Fields with min and max also get a slider.
+   ================================================================== */
+const INPUT_GROUPS = [
+  { title: "Purchase", fields: [
+    { id: "price",        label: "Home price ($)",        value: 900000, step: 5000 },
+    { id: "downPct",      label: "Down payment (%)",      value: 20,     step: 1 },
+    { id: "ratePct",      label: "Mortgage rate (%)",     value: 4.6,    step: 0.05 },
+    { id: "amortYears",   label: "Amortization (years)",  value: 25,     step: 1 },
+    { id: "sellingPct",   label: "Selling costs (%)",     value: 5.0,      step: 0.25 },
+  ]},
+  { title: "Owning costs", fields: [
+    { id: "propertyTaxPct", label: "Property tax (% of value)",  value: 1.0, step: 0.05 },
+    { id: "maintenancePct", label: "Maintenance (% of value)",   value: 1,   step: 0.1 },
+    { id: "condoFee",       label: "Condo fees ($/month)",       value: 0,   step: 25 },
+    { id: "homeInsurance",  label: "Home insurance ($/month)",   value: 160, step: 10 },
+  ]},
+  { title: "Renting", fields: [
+    { id: "rent",          label: "Monthly rent ($)",       value: 2800, step: 50 },
+    { id: "rentGrowthPct", label: "Rent growth (%/year)",   value: 3,    step: 0.25 },
+  ]},
+  { title: "Assumptions", fields: [
+    { id: "growthPct",    label: "Home price growth (%/year)", value: 3.5, step: 0.25, min: -2, max: 8 },
+    { id: "returnPct",    label: "Investment return (%/year)", value: 5.5, step: 0.25, min: 0,  max: 12 },
+    { id: "horizonYears", label: "Time horizon (years)",       value: 15,  step: 1,    min: 2,  max: 30 },
+  ]},
+];
+
+// Current values of every input. Numbers are filled from INPUT_GROUPS in buildInputs().
+const inputs = { city: "toronto", firstTimeBuyer: false, sheltered: true };
+
+/* ==================================================================
+   3. SMALL HELPERS
+   ================================================================== */
+const byId = (id) => document.getElementById(id);
+
+function formatMoney(amount) {
+  const sign = amount < 0 ? "−" : "";
+  return sign + "$" + Math.round(Math.abs(amount)).toLocaleString("en-CA");
+}
+
+/* ==================================================================
+   4. FINANCE MATH
+   ================================================================== */
+
+// Tax owed on a price using a bracket table.
+function bracketTax(price) {
+  let tax = 0;
+  let previousLimit = 0;
+  for (const [limit, rate] of LTT_BRACKETS) {
+    if (price > previousLimit) tax += (Math.min(price, limit) - previousLimit) * rate;
+    previousLimit = limit;
+  }
+  return tax;
+}
+
+// Ontario tax, plus Toronto's municipal tax if the home is in Toronto.
+function landTransferTax({ price, city, firstTimeBuyer }) {
+  if (city === "none") return 0;
+  const base = bracketTax(price);
+  const ontario = firstTimeBuyer ? Math.max(0, base - ONTARIO_FIRST_TIME_REBATE) : base;
+  const toronto = city === "toronto"
+    ? (firstTimeBuyer ? Math.max(0, base - TORONTO_FIRST_TIME_REBATE) : base)
+    : 0;
+  return ontario + toronto;
+}
+
+// CMHC insurance premium, added to the mortgage. Zero with 20%+ down or a price over $1.5M.
+function cmhcPremium({ price, downPct }, downPayment) {
+  if (downPct >= 20 || price > CMHC_PRICE_LIMIT) return 0;
+  const tier = CMHC_RATES.find((t) => downPct < t.downUnderPct);
+  return (price - downPayment) * tier.rate;
+}
+
+// Minimum down payment in Canada: 5% of the first $500k, 10% of the rest up to $1.5M, 20% above.
+function minimumDownPayment(price) {
+  if (price > CMHC_PRICE_LIMIT) return price * 0.2;
+  if (price <= 500000) return price * 0.05;
+  return 25000 + (price - 500000) * 0.1;
+}
+
+// Monthly payment on a Canadian fixed mortgage (interest compounds semi-annually).
+function mortgagePayment(loan, annualRatePct, months) {
+  const monthlyRate = Math.pow(1 + annualRatePct / 200, 1 / 6) - 1;
+  return monthlyRate > 0
+    ? loan * monthlyRate / (1 - Math.pow(1 + monthlyRate, -months))
+    : loan / months;
+}
+
+/* ==================================================================
+   5. THE SIMULATION
+   Runs month by month and tracks both households' net worth.
+   growthPct and returnPct can be overridden, which the heatmap uses.
+   ================================================================== */
+function simulate(inp, growthPct = inp.growthPct, returnPct = inp.returnPct) {
+  const months = inp.horizonYears * 12;
+  const amortMonths = inp.amortYears * 12;
+
+  // Purchase setup
+  const downPayment = inp.price * inp.downPct / 100;
+  const transferTax = landTransferTax(inp);
+  const closingCosts = transferTax + LEGAL_AND_OTHER_CLOSING_COSTS;
+  const premium = cmhcPremium(inp, downPayment);
+  const loan = inp.price - downPayment + premium;
+  const payment = mortgagePayment(loan, inp.ratePct, amortMonths);
+  const monthlyMortgageRate = Math.pow(1 + inp.ratePct / 200, 1 / 6) - 1;
+
+  // Monthly growth factors
+  const homeGrowth = Math.pow(1 + growthPct / 100, 1 / 12);
+  const investReturn = Math.pow(1 + returnPct / 100, 1 / 12) - 1;
+
+  // Starting positions
+  let homeValue = inp.price;
+  let mortgageBalance = loan;
+  let portfolio = downPayment + closingCosts;   // renter invests the cash the buyer spent
+  let amountInvested = portfolio;               // used to work out taxable gains
+
+  const buyerNetWorth = [inp.price * (1 - inp.sellingPct / 100) - loan];
+  const renterNetWorth = [portfolio];
+  let firstMonthBuyerCost = 0;
+  let firstMonthRenterCost = 0;
+  let lastMonthBuyerBehind = -1;
+
+  for (let month = 1; month <= months; month++) {
+    const yearIndex = Math.floor((month - 1) / 12);
+    const growthFactor = Math.pow(1 + inp.rentGrowthPct / 100, yearIndex);
+
+    // What each household pays this month
+    const renterCost = inp.rent * growthFactor + RENTER_INSURANCE_PER_MONTH;
+    const mortgageDue = month <= amortMonths ? payment : 0;
+    const buyerCost = mortgageDue
+      + homeValue * inp.propertyTaxPct / 1200
+      + homeValue * inp.maintenancePct / 1200
+      + (inp.condoFee + inp.homeInsurance) * growthFactor;
+
+    if (month === 1) {
+      firstMonthBuyerCost = buyerCost;
+      firstMonthRenterCost = renterCost;
+    }
+
+    // Buyer pays down the mortgage
+    if (month <= amortMonths) {
+      const interest = mortgageBalance * monthlyMortgageRate;
+      mortgageBalance = Math.max(0, mortgageBalance - (payment - interest));
+    }
+
+    // Renter invests the difference (or withdraws it if renting costs more)
+    const monthlySavings = buyerCost - renterCost;
+    portfolio = portfolio * (1 + investReturn) + monthlySavings;
+    amountInvested += monthlySavings;
+
+    homeValue *= homeGrowth;
+
+    // Net worth if everything were sold today
+    const buyer = homeValue * (1 - inp.sellingPct / 100) - mortgageBalance;
+    const taxOnGains = inp.sheltered ? 0 : Math.max(0, portfolio - amountInvested) * TAX_ON_TAXABLE_GAINS;
+    const renter = portfolio - taxOnGains;
+
+    buyerNetWorth.push(buyer);
+    renterNetWorth.push(renter);
+    if (buyer < renter) lastMonthBuyerBehind = month;
+  }
+
+  // Break-even: 0 = buyer ahead from the start, null = never catches up, otherwise the month
+  let breakEvenMonth;
+  if (lastMonthBuyerBehind < 0) breakEvenMonth = 0;
+  else if (lastMonthBuyerBehind >= months) breakEvenMonth = null;
+  else breakEvenMonth = lastMonthBuyerBehind + 1;
+
+  return {
+    months,
+    buyerNetWorth,
+    renterNetWorth,
+    breakEvenMonth,
+    difference: buyerNetWorth[months] - renterNetWorth[months],   // positive = buying wins
+    payment,
+    stressTestPayment: mortgagePayment(
+      loan, Math.max(inp.ratePct + STRESS_TEST_BUFFER_PCT, STRESS_TEST_MINIMUM_PCT), amortMonths),
+    transferTax, premium, closingCosts, downPayment, loan,
+    firstMonthBuyerCost, firstMonthRenterCost,
+  };
+}
+
+/* ==================================================================
+   6. RENDERING
+   ================================================================== */
+let latestResult = null;
+
+// ---- Input form ----
+function buildInputs() {
+  let html = "";
+
+  for (const group of INPUT_GROUPS) {
+    html += `<h3>${group.title}</h3>`;
+    for (const f of group.fields) {
+      inputs[f.id] = f.value;
+      html += `<div class="field">
+        <label for="n_${f.id}">${f.label}</label>
+        <input type="number" id="n_${f.id}" data-id="${f.id}" value="${f.value}" step="${f.step}">`;
+      if (f.min !== undefined) {
+        html += `<input type="range" aria-label="${f.label}" data-id="${f.id}"
+                  value="${f.value}" min="${f.min}" max="${f.max}" step="${f.step}">`;
+      }
+      html += `</div>`;
+    }
+  }
+
+  html += `<h3>Location and tax</h3>
+    <div class="field select">
+      <label for="city">Land transfer tax</label>
+      <select id="city" data-id="city">
+        <option value="toronto">Toronto (Ontario + city)</option>
+        <option value="ontario">Elsewhere in Ontario</option>
+        <option value="none">Ignore</option>
+      </select>
+    </div>
+    <div class="field checkbox">
+      <input type="checkbox" id="firstTimeBuyer" data-id="firstTimeBuyer">
+      <label for="firstTimeBuyer">First-time buyer rebate</label>
+    </div>
+    <div class="field checkbox">
+      <input type="checkbox" id="sheltered" data-id="sheltered" checked>
+      <label for="sheltered">Renter invests in a TFSA/RRSP (no tax)</label>
+    </div>`;
+
+  byId("inputs").innerHTML = html;
+}
+
+// Reads a changed input into `inputs`, keeps the number box and slider in sync, then redraws.
+function handleInputChange(event) {
+  const el = event.target;
+  const id = el.dataset.id;
+  if (!id) return;
+
+  if (el.type === "checkbox") inputs[id] = el.checked;
+  else if (el.type === "number" || el.type === "range") inputs[id] = parseFloat(el.value) || 0;
+  else inputs[id] = el.value;
+
+  document.querySelectorAll(`[data-id="${id}"]`).forEach((other) => {
+    if (other !== el && other.type !== "checkbox") other.value = el.value;
+  });
+  update();
+}
+
+// ---- Verdict and key numbers ----
+function renderVerdict(result) {
+  const years = inputs.horizonYears;
+  const buyerFinal = result.buyerNetWorth[result.months];
+  const renterFinal = result.renterNetWorth[result.months];
+  const scale = Math.max(Math.abs(buyerFinal), Math.abs(renterFinal), 1);
+  const isCloseCall = Math.abs(result.difference) < 0.05 * scale;
+
+  const winner = result.difference >= 0
+    ? '<span class="buy-text">Buying</span>'
+    : '<span class="rent-text">Renting and investing</span>';
+  const gap = formatMoney(Math.abs(result.difference));
+
+  byId("verdict").innerHTML = isCloseCall
+    ? `After ${years} years it’s close to a toss-up: ${winner} leads by only ${gap}.`
+    : `${winner} comes out ${gap} ahead after ${years} years.`;
+
+  let detail;
+  if (result.breakEvenMonth === 0) detail = "Buying is ahead from the start.";
+  else if (result.breakEvenMonth) detail = `Buying overtakes renting in year ${Math.ceil(result.breakEvenMonth / 12)} and stays ahead.`;
+  else if (result.difference >= 0) detail = "Buying is ahead at the end, but renting led for most of the period.";
+  else detail = `Buying does not break even within ${years} years.`;
+  byId("verdict-detail").textContent = detail;
+
+  byId("key-numbers").innerHTML = `
+    <div class="buy"><span>Buyer net worth, year ${years}</span><strong>${formatMoney(buyerFinal)}</strong></div>
+    <div class="rent"><span>Renter net worth, year ${years}</span><strong>${formatMoney(renterFinal)}</strong></div>
+    <div><span>Mortgage payment</span><strong>${formatMoney(result.payment)}/mo</strong></div>
+    <div><span>Stress-test payment</span><strong>${formatMoney(result.stressTestPayment)}/mo</strong></div>`;
+}
+
+function renderWarnings() {
+  const messages = [];
+  const minimum = minimumDownPayment(inputs.price);
+  const downPayment = inputs.price * inputs.downPct / 100;
+
+  if (downPayment < minimum) {
+    messages.push(`Your down payment is below the minimum required in Canada for this price (${formatMoney(minimum)}).`);
+  }
+  if (inputs.horizonYears > inputs.amortYears) {
+    messages.push("Your horizon is longer than the amortization, so the mortgage is paid off before the end.");
+  }
+  byId("warnings").hidden = messages.length === 0;
+  byId("warnings").textContent = messages.join(" ");
+}
+
+// ---- Chart (inline SVG, no libraries) ----
+const CHART = { width: 650, height: 300, left: 64, right: 12, top: 14, bottom: 30 };
+const chartPlotWidth = CHART.width - CHART.left - CHART.right;
+
+function renderChart(result) {
+  const allValues = result.buyerNetWorth.concat(result.renterNetWorth);
+  const minValue = Math.min(0, ...allValues);
+  let maxValue = Math.max(...allValues);
+  if (maxValue <= minValue) maxValue = minValue + 1;
+
+  const toX = (month) => CHART.left + month / result.months * chartPlotWidth;
+  const toY = (value) => CHART.height - CHART.bottom
+    - (value - minValue) / (maxValue - minValue) * (CHART.height - CHART.bottom - CHART.top);
+
+  let svg = "";
+
+  // Horizontal gridlines with value labels
+  for (let i = 0; i <= 4; i++) {
+    const value = minValue + (maxValue - minValue) * i / 4;
+    const label = Math.abs(value) >= 1e6 ? (value / 1e6).toFixed(1) + "M" : Math.round(value / 1e3) + "k";
+    svg += `<line class="gridline" x1="${CHART.left}" x2="${CHART.width - CHART.right}" y1="${toY(value)}" y2="${toY(value)}"/>
+            <text x="${CHART.left - 6}" y="${toY(value) + 4}" text-anchor="end">${label}</text>`;
+  }
+
+  // Year labels along the bottom
+  const totalYears = result.months / 12;
+  const yearStep = totalYears > 20 ? 5 : totalYears > 10 ? 2 : 1;
+  for (let year = 0; year <= totalYears; year += yearStep) {
+    svg += `<text x="${toX(year * 12)}" y="${CHART.height - 10}" text-anchor="middle">Yr ${year}</text>`;
+  }
+
+  // The two net worth lines
+  const toPath = (series) => series
+    .map((value, month) => `${month ? "L" : "M"}${toX(month).toFixed(1)} ${toY(value).toFixed(1)}`)
+    .join("");
+  svg += `<path class="line buy" d="${toPath(result.buyerNetWorth)}"/>
+          <path class="line rent" d="${toPath(result.renterNetWorth)}"/>`;
+
+  // Break-even marker
+  if (result.breakEvenMonth) {
+    const x = toX(result.breakEvenMonth);
+    svg += `<line x1="${x}" x2="${x}" y1="${CHART.top}" y2="${CHART.height - CHART.bottom}"
+                  stroke="currentColor" stroke-dasharray="4 4" opacity=".5"/>
+            <text x="${x + 4}" y="${CHART.top + 10}">Break-even</text>`;
+  }
+
+  // Hover cursor and an invisible layer that catches pointer events
+  svg += `<line id="cursor" y1="${CHART.top}" y2="${CHART.height - CHART.bottom}"
+                stroke="currentColor" opacity=".35" visibility="hidden"/>
+          <rect x="${CHART.left}" y="0" width="${chartPlotWidth}" height="${CHART.height}" fill="transparent"/>`;
+
+  byId("chart").innerHTML = svg;
+}
+
+
+function handleChartHover(event) {
+  if (!latestResult) return;
+  const box = byId("chart").getBoundingClientRect();
+  const svgX = (event.clientX - box.left) * (CHART.width / box.width) - CHART.left;
+  const month = Math.max(0, Math.min(latestResult.months, Math.round(svgX / chartPlotWidth * latestResult.months)));
+  const x = CHART.left + month / latestResult.months * chartPlotWidth;
+
+  const cursor = byId("cursor");
+  cursor.setAttribute("x1", x);
+  cursor.setAttribute("x2", x);
+  cursor.setAttribute("visibility", "visible");
+
+  byId("readout").textContent =
+    `Year ${(month / 12).toFixed(1)}: buy ${formatMoney(latestResult.buyerNetWorth[month])}, ` +
+    `rent ${formatMoney(latestResult.renterNetWorth[month])}`;
+}
+
+// ---- Cost tables ----
+function renderCosts(result) {
+  const row = (label, value) => `<tr><td>${label}</td><td>${formatMoney(value)}</td></tr>`;
+  const totalRow = (label, value) => `<tr><th>${label}</th><th>${formatMoney(value)}</th></tr>`;
+
+  byId("costs").innerHTML = `
+    <div>
+      <h2>Monthly cost, year 1</h2>
+      <table>
+        ${row("Mortgage", result.payment)}
+        ${row("Property tax", inputs.price * inputs.propertyTaxPct / 1200)}
+        ${row("Maintenance", inputs.price * inputs.maintenancePct / 1200)}
+        ${row("Condo fees and insurance", inputs.condoFee + inputs.homeInsurance)}
+        ${totalRow("Buyer total", result.firstMonthBuyerCost)}
+        ${row("Renter (rent + $30 insurance)", result.firstMonthRenterCost)}
+      </table>
+    </div>
+    <div>
+      <h2>Cash needed at purchase</h2>
+      <table>
+        ${row("Down payment", result.downPayment)}
+        ${row("Land transfer tax", result.transferTax)}
+        ${row("Legal and other", LEGAL_AND_OTHER_CLOSING_COSTS)}
+        ${totalRow("Total cash", result.downPayment + result.closingCosts)}
+        ${row("CMHC premium (added to mortgage)", result.premium)}
+        ${row("Mortgage amount", result.loan)}
+      </table>
+    </div>`;
+}
+
+// ---- Sensitivity heatmap ----
+function renderHeatmap() {
+  const grid = HEATMAP_GROWTH_RATES.map((g) =>
+    HEATMAP_RETURN_RATES.map((r) => simulate(inputs, g, r).difference));
+  const maxAbs = Math.max(1, ...grid.flat().map(Math.abs));
+
+  let html = `<div class="heading"></div>` +
+    HEATMAP_RETURN_RATES.map((r) => `<div class="heading">${r}%</div>`).join("");
+
+  HEATMAP_GROWTH_RATES.forEach((g, i) => {
+    html += `<div class="heading">${g}%</div>`;
+    HEATMAP_RETURN_RATES.forEach((r, j) => {
+      const diff = grid[i][j];
+      const strength = Math.round(15 + 55 * Math.abs(diff) / maxAbs);
+      const colour = diff >= 0 ? "var(--buy)" : "var(--rent)";
+      const current = g === inputs.growthPct && r === inputs.returnPct ? " current" : "";
+      html += `<div class="${current}" style="background:color-mix(in srgb, ${colour} ${strength}%, transparent)"
+                title="Growth ${g}%, return ${r}%: ${diff >= 0 ? "buying" : "renting"} ahead by ${formatMoney(Math.abs(diff))}">${Math.round(diff / 1000)}k</div>`;
+    });
+  });
+
+  byId("heatmap").innerHTML = html;
+}
+
+/* ==================================================================
+    START-UP
+   ================================================================== */
+function update() {
+  latestResult = simulate(inputs);
+  renderVerdict(latestResult);
+  renderWarnings();
+  renderChart(latestResult);
+  renderCosts(latestResult);
+  renderHeatmap();
+}
+
+buildInputs();
+byId("inputs").addEventListener("input", handleInputChange);
+byId("chart").addEventListener("pointermove", handleChartHover);
+byId("chart").addEventListener("pointerdown", handleChartHover);
+update();
+
+//toggle button for light mode and dark mode
+  const toggleBtn = document.getElementById("toggleBtn");
+  const root = document.documentElement;
+ const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+ function currentTheme() {
+   return root.getAttribute("data-theme") || (systemDark.matches ? "dark" : "light");
+ }
+
+function updateButton(){
+  toggleBtn.textContent = currentTheme() === "dark" ? "Switch to light mode" : "Switch to dark mode";
+}
+
+
+toggleBtn.addEventListener("click", () => {
+root.setAttribute("data-theme", currentTheme() === "dark" ? "light": "dark");
+updateButton();
+
+    });
+
+    updateButton();
+
+
+</script>
+</body>
+</html>
